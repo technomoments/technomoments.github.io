@@ -1,13 +1,7 @@
-/* ═══════════════════════════════════════════════════════════
-   TechnoMoments — Main JavaScript
-   Handles: sticky header, hamburger menu, dropdowns,
-   smooth scroll, scroll reveal
-   ═══════════════════════════════════════════════════════════ */
-
 (function () {
   'use strict';
 
-  // ── Sticky Header Scroll Behaviour ──────────────────────
+  // ── Sticky Header ────────────────────────────────────────
   const header = document.getElementById('header');
   if (header) {
     window.addEventListener('scroll', function () {
@@ -15,58 +9,82 @@
     }, { passive: true });
   }
 
-  // ── Mobile Hamburger Menu ───────────────────────────────
+  // ── Hamburger Menu ───────────────────────────────────────
   const hamburger = document.querySelector('.nav-hamburger');
   const mobileMenu = document.getElementById('mobileMenu');
 
+  function closeMenu() {
+    hamburger.setAttribute('aria-expanded', 'false');
+    mobileMenu.setAttribute('aria-hidden', 'true');
+    hamburger.classList.remove('open');
+    mobileMenu.classList.remove('open');
+    // NO body overflow lock
+  }
+
   if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function () {
-      const isOpen = hamburger.getAttribute('aria-expanded') === 'true';
-      hamburger.setAttribute('aria-expanded', String(!isOpen));
-      mobileMenu.setAttribute('aria-hidden', String(isOpen));
-      hamburger.classList.toggle('open');
-      mobileMenu.classList.toggle('open');
-      document.body.style.overflow = isOpen ? '' : 'hidden';
+    hamburger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const isOpen = mobileMenu.classList.contains('open');
+      if (isOpen) {
+        closeMenu();
+      } else {
+        hamburger.setAttribute('aria-expanded', 'true');
+        mobileMenu.setAttribute('aria-hidden', 'false');
+        hamburger.classList.add('open');
+        mobileMenu.classList.add('open');
+      }
     });
 
-    // Close mobile menu on link click
-    mobileMenu.querySelectorAll('a').forEach(function (link) {
+    // Close ONLY when clicking a real destination link (not toggles)
+    mobileMenu.querySelectorAll('a:not(.mobile-dropdown-toggle)').forEach(function (link) {
       link.addEventListener('click', function () {
-        hamburger.setAttribute('aria-expanded', 'false');
-        mobileMenu.setAttribute('aria-hidden', 'true');
-        hamburger.classList.remove('open');
-        mobileMenu.classList.remove('open');
-        document.body.style.overflow = '';
+        closeMenu();
       });
     });
 
-    // Close on Escape key
+    // Close on Escape
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && mobileMenu.classList.contains('open')) {
-        hamburger.setAttribute('aria-expanded', 'false');
-        mobileMenu.setAttribute('aria-hidden', 'true');
-        hamburger.classList.remove('open');
-        mobileMenu.classList.remove('open');
-        document.body.style.overflow = '';
+        closeMenu();
+      }
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', function (e) {
+      if (mobileMenu.classList.contains('open') &&
+          !mobileMenu.contains(e.target) &&
+          !hamburger.contains(e.target)) {
+        closeMenu();
       }
     });
   }
 
-  // ── Mobile Dropdown Toggles ─────────────────────────────
+  // ── Mobile Accordion Dropdowns ───────────────────────────
   document.querySelectorAll('.mobile-dropdown-toggle').forEach(function (toggle) {
     toggle.addEventListener('click', function (e) {
       e.preventDefault();
-      var parent = toggle.parentElement;
-      var dropdown = parent.querySelector('.mobile-dropdown');
-      if (dropdown) {
-        var isVisible = dropdown.style.display === 'block';
-        dropdown.style.display = isVisible ? 'none' : 'block';
-        toggle.setAttribute('aria-expanded', String(!isVisible));
+      e.stopPropagation(); // prevent closing the menu
+
+      const dropdown = toggle.nextElementSibling;
+      const isOpen = dropdown.style.display === 'flex';
+
+      // Close all first
+      document.querySelectorAll('.mobile-dropdown-toggle').forEach(function (t) {
+        t.setAttribute('aria-expanded', 'false');
+        t.classList.remove('open');
+        if (t.nextElementSibling) t.nextElementSibling.style.display = 'none';
+      });
+
+      // Open this one if it was closed
+      if (!isOpen) {
+        toggle.setAttribute('aria-expanded', 'true');
+        toggle.classList.add('open');
+        dropdown.style.display = 'flex';
       }
     });
   });
 
-  // ── Smooth Scroll for Anchor Links ──────────────────────
+  // ── Smooth Scroll ────────────────────────────────────────
   document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
     anchor.addEventListener('click', function (e) {
       var id = this.getAttribute('href');
@@ -80,7 +98,7 @@
     });
   });
 
-  // ── Scroll Reveal Animation ─────────────────────────────
+  // ── Scroll Reveal ────────────────────────────────────────
   var revealObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       if (entry.isIntersecting) {
@@ -94,7 +112,7 @@
     revealObserver.observe(el);
   });
 
-  // ── Init Lucide Icons ───────────────────────────────────
+  // ── Lucide Icons ─────────────────────────────────────────
   if (window.lucide) {
     lucide.createIcons();
   }
